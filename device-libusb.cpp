@@ -1,3 +1,9 @@
+#ifndef gettid
+#include <unistd.h>
+#include <sys/syscall.h>
+#define gettid() syscall(SYS_gettid)
+#endif
+
 #include "device-libusb.h"
 
 libusb_device 			**devs;

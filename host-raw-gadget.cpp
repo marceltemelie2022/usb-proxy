@@ -16,6 +16,12 @@
 
 #include <linux/types.h>
 
+#ifndef gettid
+#include <unistd.h>
+#include <sys/syscall.h>
+#define gettid() syscall(SYS_gettid)
+#endif
+
 #include "host-raw-gadget.h"
 #include "device-libusb.h"
 
@@ -421,7 +427,7 @@ void *ep_loop_read(void *arg) {
 		else {
 			temp_data.io.inner.ep = ep_num;
 			temp_data.io.inner.flags = 0;
-			temp_data.io.inner.length = sizeof(temp_data.io.data);
+			temp_data.io.inner.length = ep.wMaxPacketSize;//sizeof(temp_data.io.data);
 
 			int rv = usb_raw_ep_read(fd, (struct usb_raw_ep_io *)&temp_data.io);
 			if (rv >= 0) {
@@ -500,10 +506,12 @@ void process_eps(int fd, int desired_interface) {
 
 		ep_thread_list[i].ep_thread_info.ep_num = usb_raw_ep_enable(fd,
 					&ep_thread_list[i].ep_thread_info.endpoint);
-		printf("%s_%s: addr = %u, ep = #%d\n",
+		printf("%s_%s: addr = %u, ep = #%d, pktsize = %d, poll = %dms\n",
 			ep_thread_list[i].ep_thread_info.transfer_type.c_str(),
 			ep_thread_list[i].ep_thread_info.dir.c_str(),
-			addr, ep_thread_list[i].ep_thread_info.ep_num);
+			addr, ep_thread_list[i].ep_thread_info.ep_num,
+			ep_thread_list[i].ep_thread_info.endpoint.wMaxPacketSize,
+			ep_thread_list[i].ep_thread_info.endpoint.bInterval);
 
 		if (verbose_level)
 			printf("Creating thread for EP%02x\n",
