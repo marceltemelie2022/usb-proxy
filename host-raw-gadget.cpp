@@ -1,11 +1,9 @@
-#include <assert.h>
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <unistd.h>
 #include <errno.h>
 
@@ -23,7 +21,6 @@
 #endif
 
 #include "host-raw-gadget.h"
-#include "device-libusb.h"
 
 struct usb_device_descriptor		host_device_desc;
 struct raw_gadget_config_descriptor	*host_config_desc;
@@ -168,6 +165,7 @@ int usb_raw_eps_info(int fd, struct usb_raw_eps_info *info) {
 }
 
 void usb_raw_ep0_stall(int fd) {
+	printf("ep0: stalling\n");
 	int rv = ioctl(fd, USB_RAW_IOCTL_EP0_STALL, 0);
 	if (rv < 0) {
 		if (errno == EBUSY)
@@ -455,22 +453,20 @@ void process_eps(int fd, int desired_interface) {
 	memset(&info, 0, sizeof(info));
 
 	int num = usb_raw_eps_info(fd, &info);
-	if (verbose_level) {
-		for (int i = 0; i < num; i++) {
-			printf("ep #%d:\n", i);
-			printf("  name: %s\n", &info.eps[i].name[0]);
-			printf("  addr: %u\n", info.eps[i].addr);
-			printf("  type: %s %s %s\n",
-				info.eps[i].caps.type_iso ? "iso" : "___",
-				info.eps[i].caps.type_bulk ? "blk" : "___",
-				info.eps[i].caps.type_int ? "int" : "___");
-			printf("  dir : %s %s\n",
-				info.eps[i].caps.dir_in ? "in " : "___",
-				info.eps[i].caps.dir_out ? "out" : "___");
-			printf("  maxpacket_limit: %u\n",
-				info.eps[i].limits.maxpacket_limit);
-			printf("  max_streams: %u\n", info.eps[i].limits.max_streams);
-		}
+	for (int i = 0; i < num; i++) {
+		printf("ep #%d:\n", i);
+		printf("  name: %s\n", &info.eps[i].name[0]);
+		printf("  addr: %u\n", info.eps[i].addr);
+		printf("  type: %s %s %s\n",
+			info.eps[i].caps.type_iso ? "iso" : "___",
+			info.eps[i].caps.type_bulk ? "blk" : "___",
+			info.eps[i].caps.type_int ? "int" : "___");
+		printf("  dir : %s %s\n",
+			info.eps[i].caps.dir_in ? "in " : "___",
+			info.eps[i].caps.dir_out ? "out" : "___");
+		printf("  maxpacket_limit: %u\n",
+			info.eps[i].limits.maxpacket_limit);
+		printf("  max_streams: %u\n", info.eps[i].limits.max_streams);
 	}
 
 	struct raw_gadget_interface_descriptor temp_interface =

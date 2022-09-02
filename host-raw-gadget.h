@@ -133,18 +133,13 @@ struct usb_raw_transfer_io {
 
 /*----------------------------------------------------------------------*/
 
-struct data_queue_info {
-	struct usb_raw_transfer_io 	io;
-	int 				length = 0;
-};
-
 struct thread_info {
 	int				fd;
 	int				ep_num = -1;
 	struct usb_endpoint_descriptor 	endpoint;
 	std::string			transfer_type;
 	std::string			dir;
-	std::deque<data_queue_info>	*data_queue;
+	std::deque<usb_raw_transfer_io> *data_queue;
 	std::mutex			*data_mutex;
 };
 
@@ -158,10 +153,31 @@ extern endpoint_thread *ep_thread_list;
 
 /*----------------------------------------------------------------------*/
 
+enum usb_injection_flags {
+	USB_INJECTION_FLAG_NONE,
+	USB_INJECTION_FLAG_IGNORE,
+	USB_INJECTION_FLAG_STALL,
+};
+
+/*----------------------------------------------------------------------*/
+
 int usb_raw_open();
 void usb_raw_init(int fd, enum usb_device_speed speed,
 			const char *driver, const char *device);
 void usb_raw_run(int fd);
+void usb_raw_event_fetch(int fd, struct usb_raw_event *event);
+int usb_raw_ep0_read(int fd, struct usb_raw_ep_io *io);
+int usb_raw_ep0_write(int fd, struct usb_raw_ep_io *io);
+int usb_raw_ep_enable(int fd, struct usb_endpoint_descriptor *desc);
+int usb_raw_ep_disable(int fd, uint32_t num);
+int usb_raw_ep_read(int fd, struct usb_raw_ep_io *io);
+int usb_raw_ep_write(int fd, struct usb_raw_ep_io *io);
+void usb_raw_configure(int fd);
+void usb_raw_vbus_draw(int fd, uint32_t power);
+int usb_raw_eps_info(int fd, struct usb_raw_eps_info *info);
+void usb_raw_ep0_stall(int fd);
+void usb_raw_ep_set_halt(int fd, int ep);
 
-void ep0_loop(int fd);
-int init_raw_gadget();
+void log_control_request(struct usb_ctrlrequest *ctrl);
+void log_event(struct usb_raw_event *event);
+void print_eps_info(int fd);
